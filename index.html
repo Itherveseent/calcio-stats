@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calcio Hit Rate</title>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef2f8;--s1:#fff;--s2:#f3f6fc;--ink:#0f1b34;--muted:#5f6d88;--line:#d9e0ee;--accent:#1f9d5c;--ink-on:#fff;--bar:#cbd4e6;--hl:34%}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#0b1324;--s1:#121c33;--s2:#18243f;--ink:#eef2fa;--muted:#94a1bd;--line:#26345a;--accent:#3ed47f;--ink-on:#0a1708;--bar:#2e3d63;--hl:64%}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 Barlow,system-ui,sans-serif}
+main{max-width:1060px;margin:0 auto;padding:0 16px 56px}
+.hero{position:relative;overflow:hidden;padding:40px 0 20px}
+.hero svg{position:absolute;right:-30px;top:-20px;width:260px;height:260px;color:var(--accent);opacity:.22;pointer-events:none}
+h1{font:800 clamp(2.6rem,8vw,4.6rem)/.95 "Big Shoulders Display",Impact,sans-serif;margin:0 0 10px;position:relative}
+h2{font:800 1.7rem "Big Shoulders Display",sans-serif;margin:34px 0 12px;display:flex;align-items:center;gap:10px}
+h2::before{content:"";width:6px;height:1.1em;background:var(--accent);border-radius:3px}
+.sub{max-width:58ch;margin:0 0 6px;color:var(--muted);font-size:1.05rem;position:relative}
+.note{color:var(--muted);font-size:.88rem}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:end}
+.panel{background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+label{display:flex;flex-direction:column;font-size:.8rem;color:var(--muted);gap:3px;font-weight:500}
+input,select,button{font:inherit;color:var(--ink);background:var(--s2);border:1px solid var(--line);padding:8px 12px;border-radius:10px}
+input[type=number]{width:100px}input[type=search]{min-width:200px}
+button{cursor:pointer;transition:background .15s,border-color .15s}
+button:hover{border-color:var(--accent)}
+button[aria-pressed=true]{background:var(--accent);color:var(--ink-on);border-color:var(--accent);font-weight:600}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lg{display:inline-block;padding:0 6px;border-radius:5px;font:700 .68rem Barlow;background:var(--s2);color:var(--muted);border:1px solid var(--line)}
+.tb{display:inline-block;min-width:32px;text-align:center;padding:0 5px;border-radius:5px;font:700 .72rem "Big Shoulders Display";letter-spacing:.03em;background:hsl(var(--t) 55% 45%);color:#fff}
+.wrap{overflow-x:auto;background:var(--s1);border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
+th,td{padding:4px 8px;text-align:center;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font:700 .78rem Barlow;color:var(--muted);background:var(--s2);border-bottom:1px solid var(--line);position:sticky;top:0}
+tbody tr{border-bottom:1px solid var(--line);cursor:pointer}
+tbody tr:hover{background:var(--s2)}tbody tr.on{background:var(--s2);box-shadow:inset 4px 0 var(--accent)}
+td.nm{font-weight:600;text-align:left}
+.pill{display:inline-block;padding:1px 7px;border-radius:999px;font-variant-numeric:tabular-nums;font-size:.8rem;background:hsl(var(--h) 65% 50%/.18);color:hsl(var(--h) 70% var(--hl))}
+.pill.none{background:none;color:var(--muted)}
+.gauge{display:inline-block;width:36px;height:6px;border-radius:4px;background:var(--bar);vertical-align:middle;overflow:hidden;margin-right:5px}
+.gauge i{display:block;height:100%;background:hsl(var(--h) 65% 50%)}
+.detail{background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px;border-top:4px solid var(--accent)}
+.detail h3{font:800 1.5rem "Big Shoulders Display",sans-serif;margin:0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.chart{position:relative;height:170px;display:flex;align-items:flex-end;gap:5px;margin:30px 0 26px;border-bottom:1px solid var(--line)}
+.bar{flex:1;position:relative;min-width:8px;background:var(--bar);border-radius:5px 5px 0 0}
+.bar.h{background:linear-gradient(hsl(150 62% 52%),hsl(150 62% 38%))}
+.bar i{position:absolute;top:-19px;left:-4px;right:-4px;text-align:center;font:700 .78rem Barlow;font-style:normal;color:var(--muted)}
+.bar u{position:absolute;bottom:-19px;left:-4px;right:-4px;text-align:center;font:500 .66rem Barlow;color:var(--muted);text-decoration:none;overflow:hidden}
+.ln{position:absolute;left:0;right:0;border-top:2px dashed var(--accent);pointer-events:none}
+.ln em{position:absolute;right:0;top:-20px;font:700 .75rem Barlow;font-style:normal;background:var(--accent);color:var(--ink-on);padding:0 6px;border-radius:4px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;margin-top:6px}
+.tile{background:var(--s2);border-radius:10px;padding:10px 12px;border-bottom:3px solid hsl(var(--h) 65% 50%)}
+.tile b{display:block;font:800 2rem/1 "Big Shoulders Display",sans-serif;color:hsl(var(--h) 70% var(--hl))}
+.tile span{font-size:.8rem;color:var(--muted)}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+<header class="hero">
+<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><circle cx="100" cy="100" r="92"/><path d="M8 100h184M100 8v184M30 30c40 50 100 50 140 0M30 170c40-50 100-50 140 0"/></svg>
+<h1>Calcio Hit Rate</h1>
+<p class="sub">Serie A, Premier League, Liga, Bundesliga, Ligue 1 e Champions League: quante volte ogni giocatore supera una soglia, e come va contro il prossimo avversario.</p>
+<p class="note" id="upd"></p>
+</header>
+
+<h2>Partite in programma</h2>
+<div class="row" id="up"></div>
+<p class="note" id="upn"></p>
+
+<h2>Cerca per soglia</h2>
+<div class="panel">
+<div class="row" id="stc" role="group" aria-label="Statistica"></div>
+<div class="row">
+<select id="st" hidden></select>
+<label>Soglia (supera)<input type="number" id="ln" step="0.5" min="0"></label>
+<label>Ordina per<select id="win"><option value="comb">Combinato</option><option value="5">Ultime 5</option><option value="10">Ultime 10</option><option value="tot">Totale</option><option value="h2h">Contro l’avversario</option></select></label>
+<label>Campionato<select id="lgf"><option value="">Tutti</option></select></label>
+<label>Giocatore<input type="search" id="q" placeholder="Cerca per nome"></label>
+<label>Linea realistica<select id="rm"><option value="20">Molto stretta</option><option value="35">Stretta</option><option value="55" selected>Normale</option><option value="999">Disattivata</option></select></label>
+</div>
+</div>
+<div id="detail"></div>
+<div class="wrap"><table><thead><tr><th>Giocatore</th><th>Sq.</th><th>Camp.</th><th>PG</th><th>Media</th><th>Ultime 5</th><th>Ultime 10</th><th>Totale</th><th>Prossimo avv.</th><th>Combinato</th></tr></thead><tbody id="body"></tbody></table></div>
+<p class="note">Tocca un giocatore per vedere partita per partita e scegliere contro quale squadra confrontarlo. “Linea realistica” nasconde i giocatori per cui la soglia scelta è troppo lontana dalla loro media (per un attaccante da 0,6 gol a partita, una soglia di 0,5 gol è quasi scontata). I dati partono dall’inizio della stagione in corso, per tenere il caricamento ragionevole: i precedenti contro un avversario, specie in campionato, possono quindi essere ancora pochi a inizio stagione. “Parate” ha senso solo per i portieri. Sono statistiche passate: non garantiscono nulla sulle partite future.</p>
+</main>
+<script>
+var $=function(id){return document.getElementById(id)};
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
+var rome=function(d,o){return new Date(d).toLocaleString("it-IT",Object.assign({timeZone:"Europe/Rome"},o))};
+var STATS={g:"Gol",a:"Assist",ga:"Gol+Assist",sh:"Tiri",st:"Tiri in porta",yc:"Ammonizioni",rc:"Espulsioni",fc:"Falli commessi",fa:"Falli subiti",sv:"Parate"};
+var DEF={g:0.5,a:0.5,ga:0.5,sh:1.5,st:0.5,yc:0.5,rc:0.5,fc:1.5,fa:1.5,sv:2.5};
+var logs={},up=[],on={},nextOpp={},allTeams=[],leagues={},st="g",sel=null,oppSel="";
+$("st").innerHTML=Object.keys(STATS).map(function(k){return '<option value="'+k+'">'+STATS[k]+"</option>"}).join("");
+$("ln").value=DEF.g;
+
+fetch("data/games.json").then(function(r){return r.json()}).then(function(d){
+  leagues=d.leagues||{};
+  $("lgf").innerHTML+=Object.keys(leagues).map(function(k){return '<option value="'+k+'">'+leagues[k]+"</option>"}).join("");
+  var gs=Object.keys(d.games).map(function(k){return d.games[k]}).sort(function(a,b){return a.date<b.date?-1:1}),ts={};
+  gs.forEach(function(g){ts[g.home.t]=ts[g.away.t]=1;g.players.forEach(function(p){
+    var home=p.t===g.home.t,k=p.n+"|"+p.t,rec=logs[k]=logs[k]||{n:p.n,t:p.t,g:[]};
+    rec.g.push({d:g.date,lg:g.lg,opp:home?g.away.t:g.home.t,home:home,g:p.g,a:p.a,ga:p.g+p.a,sh:p.sh,st:p.st,yc:p.yc,rc:p.rc,fc:p.fc,fa:p.fa,sv:p.sv})})});
+  allTeams=Object.keys(ts).sort();
+  up=d.upcoming||[];
+  up.forEach(function(g){if(!nextOpp[g.away])nextOpp[g.away]=g.home;if(!nextOpp[g.home])nextOpp[g.home]=g.away});
+  $("upd").textContent=d.updated?"Ultimo aggiornamento: "+rome(d.updated,{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})+" (ora italiana)":"";
+  chips();stchips();render();
+}).catch(function(){$("body").innerHTML='<tr><td colspan="10" class="empty">Dati non ancora disponibili. Su GitHub apri Actions e avvia “Aggiorna dati calcio”.</td></tr>'});
+
+function chips(){
+  $("up").innerHTML=up.slice(0,30).map(function(g,i){return '<button data-i="'+i+'" aria-pressed="'+!!on[i]+'"><span class="lg">'+g.lgname+'</span> '+g.away+" @ "+g.home+" · "+rome(g.date,{weekday:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})+"</button>"}).join("")||'<span class="note">Nessuna partita in programma nei dati.</span>';
+  $("upn").textContent=up.length?"Tocca una partita per mostrare solo i giocatori delle due squadre.":"";
+}
+function stchips(){$("stc").innerHTML=Object.keys(STATS).map(function(k){return '<button data-s="'+k+'" aria-pressed="'+(k===$("st").value)+'">'+STATS[k]+"</button>"}).join("")}
+function rate(arr,line){var h=0,m=0,s=st;arr.forEach(function(x){if(x[s]>line)h++;else if(x[s]<line)m++});return {h:h,t:h+m,p:h+m?h/(h+m):-1}}
+var fmt=function(r){return r.t?r.h+"/"+r.t+" ("+Math.round(r.p*100)+"%)":"–"};
+var pill=function(r){return r.t?'<span class="pill" style="--h:'+Math.round(r.p*125)+'"><b>'+Math.round(r.p*100)+'%</b> '+r.h+'/'+r.t+"</span>":'<span class="pill none">–</span>'};
+var badge=function(t){var h=0;for(var i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))%360;return '<span class="tb" style="--t:'+h+'">'+t+"</span>"};
+var tile=function(r,l){return '<div class="tile" style="--h:'+(r.t?Math.round(r.p*125):60)+'"><b>'+(r.t?Math.round(r.p*100)+"%":"–")+"</b><span>"+(r.t?r.h+"/"+r.t+" · ":"")+l+"</span></div>"};
+var vsOpp=function(a,o){return a.g.filter(function(x){return x.opp===o})};
+var lastLg=function(a){return a.g.length?a.g[a.g.length-1].lg:""};
+
+function render(){
+  st=$("st").value;var line=parseFloat($("ln").value)||0,w=$("win").value,q=$("q").value.trim().toLowerCase(),lf=$("lgf").value;
+  var teams={},any=false;up.forEach(function(g,i){if(on[i]){any=true;teams[g.away]=teams[g.home]=1}});
+  var rows=Object.keys(logs).map(function(k){var a=logs[k],no=nextOpp[a.t];
+    var s=a.g.reduce(function(x,y){return x+y[st]},0),r={k:k,n:a.n,t:a.t,lg:lastLg(a),gp:a.g.length,avg:s/a.g.length,no:no,
+      r5:rate(a.g.slice(-5),line),r10:rate(a.g.slice(-10),line),rt:rate(a.g,line),rh:no?rate(vsOpp(a,no),line):{h:0,t:0,p:-1}};
+    var ps=[r.r5,r.r10,r.rt,r.rh].filter(function(x){return x.p>=0}).map(function(x){return x.p});
+    r.cb=ps.length?ps.reduce(function(x,y){return x+y},0)/ps.length:-1;return r})
+  .filter(function(r){return r.gp>=4&&(!any||teams[r.t])&&(!q||r.n.toLowerCase().indexOf(q)>-1)&&(!lf||r.lg===lf)})
+  .filter(function(r){var m=+$("rm").value;if(m>=999)return true;return Math.abs(r.avg-line)<=Math.max(line,1)*(m/100)});
+  var get=function(r){return w==="5"?r.r5.p:w==="10"?r.r10.p:w==="tot"?r.rt.p:w==="h2h"?r.rh.p:r.cb};
+  rows.sort(function(a,b){return get(b)-get(a)||b.avg-a.avg});
+  $("body").innerHTML=rows.slice(0,150).map(function(r){
+    var cb=r.cb>=0?'<span class="gauge"><i style="--h:'+Math.round(r.cb*125)+';width:'+Math.round(r.cb*100)+'%"></i></span><b>'+Math.round(r.cb*100)+"%</b>":"–";
+    return '<tr data-k="'+esc(r.k)+'"'+(r.k===sel?' class="on"':"")+'><td class="nm">'+esc(r.n)+"</td><td>"+badge(r.t)+'</td><td><span class="lg">'+(leagues[r.lg]||r.lg)+"</span></td><td>"+r.gp+"</td><td>"+r.avg.toFixed(2)+"</td><td>"+pill(r.r5)+"</td><td>"+pill(r.r10)+"</td><td>"+pill(r.rt)+"</td><td>"+(r.no?badge(r.no)+" ":"")+pill(r.rh)+"</td><td>"+cb+"</td></tr>"}).join("")||'<tr><td colspan="10" class="empty">Nessun giocatore trovato con questi filtri.</td></tr>';
+  detail(line);
+}
+function bars(g,line,byDate){
+  var max=Math.max.apply(null,g.map(function(x){return x[st]}).concat([line,1]))*1.1;
+  return '<div class="chart">'+g.map(function(x){return '<div class="bar'+(x[st]>line?" h":"")+'" style="height:'+(x[st]/max*100)+'%" title="'+(x.home?"vs ":"@ ")+x.opp+" "+rome(x.d,{day:"numeric",month:"short"})+": "+x[st]+'"><i>'+x[st]+"</i><u>"+(byDate?rome(x.d,{day:"numeric",month:"numeric"}):x.opp)+"</u></div>"}).join("")+'<div class="ln" style="bottom:'+(line/max*100)+'%"><em>'+line+"</em></div></div>";
+}
+function detail(line){
+  if(!sel||!logs[sel]){$("detail").innerHTML="";return}
+  var a=logs[sel],h=vsOpp(a,oppSel),hm=a.g.filter(function(x){return x.home}),aw=a.g.filter(function(x){return !x.home});
+  var sel2='<select id="osel" aria-label="Avversario"><option value="">Scegli avversario</option>'+allTeams.filter(function(t){return t!==a.t}).map(function(t){return "<option"+(t===oppSel?" selected":"")+">"+t+"</option>"}).join("")+"</select>";
+  $("detail").innerHTML='<div class="detail"><h3>'+esc(a.n)+" "+badge(a.t)+" <span class=\"note\">"+STATS[st]+" oltre "+line+"</span></h3>"+
+   bars(a.g.slice(-15),line,false)+
+   '<div class="tiles">'+tile(rate(a.g.slice(-5),line),"ultime 5")+tile(rate(a.g.slice(-10),line),"ultime 10")+tile(rate(a.g,line),"totale")+tile(rate(hm,line),"in casa")+tile(rate(aw,line),"in trasferta")+"</div>"+
+   '<p class="note">Ultime 15 partite, dalla più vecchia a sinistra. In verde quelle sopra la soglia.</p>'+
+   '<h3 style="margin:16px 0 0">Precedenti contro '+sel2+"</h3>"+
+   (oppSel?(h.length?bars(h.slice(-15),line,true)+'<div class="tiles">'+tile(rate(h,line),"contro "+oppSel)+'<div class="tile" style="--h:60"><b>'+(h.reduce(function(x,y){return x+y[st]},0)/h.length).toFixed(2)+"</b><span>media contro "+oppSel+"</span></div></div>":'<p class="note">Nessuna partita trovata contro '+oppSel+".</p>"):'<p class="note">Scegli una squadra per vedere i precedenti.</p>')+"</div>";
+}
+$("stc").addEventListener("click",function(e){var k=e.target.dataset.s;if(!k)return;$("st").value=k;$("ln").value=DEF[k];stchips();render()});
+["ln","win","q","rm","lgf"].forEach(function(id){$(id).addEventListener("input",render)});
+$("up").addEventListener("click",function(e){var btn=e.target.closest("button");if(!btn)return;var i=btn.dataset.i;if(i===undefined)return;on[i]=!on[i];chips();render()});
+$("body").addEventListener("click",function(e){var tr=e.target.closest("tr");if(!tr||!tr.dataset.k)return;sel=tr.dataset.k;oppSel=nextOpp[logs[sel].t]||"";render();$("detail").scrollIntoView({behavior:"smooth",block:"nearest"})});
+$("detail").addEventListener("change",function(e){if(e.target.id==="osel"){oppSel=e.target.value;render()}});
+</script>
+</body>
+</html>
