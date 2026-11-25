@@ -69,6 +69,8 @@ def _entry_stats(entry):
     le appiattisce in un dizionario nome_minuscolo -> valore."""
     out = {}
     for block in (entry.get("statistics") or []):
+        if not isinstance(block, dict):
+            continue
         for s in (block.get("stats") or []):
             if isinstance(s, dict):
                 name = (s.get("name") or s.get("abbreviation") or s.get("displayName") or "").lower()
@@ -106,11 +108,51 @@ def _find_player_entries(node, team=None, out=None):
     return out
 
 
+def _events(summary):
+    """Estrae gol/assist/ammonizioni/espulsioni dagli eventi della partita
+    (header.competitions[0].details), che per il calcio è dove ESPN li mette
+    davvero, invece che in una tabella di statistiche per giocatore."""
+    comps = (summary.get("header") or {}).get("competitions", [])
+    details = comps[0].get("details", []) if comps else []
+    out = {}
+
+    def bump(ath, field):
+        if not ath:
+            return
+        pid = ath.get("id") or ath.get("displayName")
+        if not pid:
+            return
+        rec = out.setdefault(pid, {
+            "n": ath.get("displayName", ""),
+            "g": 0, "a": 0, "yc": 0, "rc": 0,
+        })
+        rec[field] += 1
+
+    for ev in details:
+        typ = (ev.get("type") or {}).get("text", "") or ""
+        typ = typ.lower()
+        involved = ev.get("athletesInvolved") or []
+        if "yellow card" in typ:
+            bump(involved[0] if involved else None, "yc")
+        elif "red card" in typ:
+            bump(involved[0] if involved else None, "rc")
+        elif "goal" in typ and "own goal" not in typ:
+            if involved:
+                bump(involved[0], "g")
+            if len(involved) > 1:
+                bump(involved[1], "a")
+        elif "own goal" in typ:
+            if involved:
+                bump(involved[0], "g")
+    return out, details
+
+
 def players(summary, debug=False):
     out = {}
     entries = _find_player_entries(summary.get("boxscore", summary))
     if not entries:
         entries = _find_player_entries(summary)
+    events, raw_details = _events(summary)
     if debug:
         print("  DEBUG chiavi summary:", list(summary.keys()), file=sys.stderr)
         print("  DEBUG chiavi boxscore:", list(summary.get("boxscore", {}).keys()), file=sys.stderr)
@@ -119,7 +161,17 @@ def players(summary, debug=False):
             team0, e0 = entries[0]
             print("  DEBUG esempio squadra:", team0, "chiavi giocatore:", list(e0.keys()), file=sys.stderr)
             print("  DEBUG esempio athlete:", e0.get("athlete"), file=sys.stderr)
-            print("  DEBUG esempio stats grezze:", _entry_stats(e0), file=sys.stderr)
+            print("  DEBUG esempio statistics grezzo:", e0.get("statistics"), file=sys.stderr)
+            print("  DEBUG esempio mainStat:", e0.get("mainStat"), file=sys.stderr)
+            print("  DEBUG esempio summary campo:", e0.get("summary"), file=sys.stderr)
+            print("  DEBUG esempio displayValue:", e0.get("displayValue"), file=sys.stderr)
+        print("  DEBUG eventi (details) trovati:", len(raw_details), file=sys.stderr)
+        if raw_details:
+            print("  DEBUG esempio evento grezzo:", raw_details[0], file=sys.stderr)
+        print("  DEBUG giocatori con eventi gol/cartellini:", len(events), file=sys.stderr)
+        rosters = summary.get("rosters")
+        if rosters:
+            print("  DEBUG chiavi primo roster (livello squadra):", list(rosters[0].keys()), file=sys.stderr)
     for team, entry in entries:
         info = entry.get("athlete", {})
         pid = info.get("id") or info.get("displayName")
@@ -136,6 +188,19 @@ def players(summary, debug=False):
                 if name in d:
                     rec[field] = max(rec[field], _num(d[name]))
                     break
+    # Integra/sovrascrive gol, assist e cartellini con quelli ricavati dagli eventi,
+    # che per il calcio sono più affidabili della tabella statistiche.
+    for pid, ev in events.items():
+        rec = out.get(pid)
+        if rec is None:
+            rec = out.setdefault(pid, {
+                "n": ev["n"], "t": "?", "pos": "",
+                "g": 0, "a": 0, "sh": 0, "st": 0, "fc": 0, "fa": 0, "yc": 0, "rc": 0, "sv": 0,
+            })
+        rec["g"] = max(rec["g"], ev["g"])
+        rec["a"] = max(rec["a"], ev["a"])
+        rec["yc"] = max(rec["yc"], ev["yc"])
+        rec["rc"] = max(rec["rc"], ev["rc"])
     return list(out.values())
 
 
